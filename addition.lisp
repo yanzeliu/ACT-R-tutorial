@@ -6,7 +6,7 @@
 
 
 ;; Add Chunk-types here
-(chunk-type add-two-numbers first-addend second-addend answer state place carry non-nil-addend)
+(chunk-type add-two-numbers first-addend second-addend answer state place carry remainder)
 (chunk-type addition-fact addend1 addend2 sum)
 (chunk-type number hundreds tens ones)
 (chunk-type positional-order first second)
@@ -97,7 +97,7 @@
  (po-0 ISA positional-order first ones second tens)
  (po-1 ISA positional-order first tens second hundreds)
 
- (addend18 ISA number tens 1 ones 8)
+ (addend18 ISA number tens 1 ones nil)
  (addend23 ISA number tens 2 ones 3)
 
  (goal ISA add-two-numbers first-addend addend18 second-addend addend23 state start)
@@ -264,76 +264,19 @@
      place           =place
    ?imaginal>
      state           free
-     buffer          full
+   =imaginal>
    =retrieval>
      ISA             number
      =place          nil
 ==>
    =goal>
      ISA             add-two-numbers
-     addend2         retrieving-addition-fact
+     state           retrieving-addition-fact
    *imaginal>   
      ISA             addition-fact
      addend2         0
 )
 
-;;; ============================================================================
-;;; Get highest positional value of answer, when both place values of two 
-;;; addends are nil.
-;;;
-;;; IF both ADDEND1 and ADDEND2 are nil
-;;; THEN test value of CARRY
-;;;
-;;; IF value of CARRY is 1
-;;; THEN set the current place value of answer as 1
-;;; ============================================================================
-(p process-both-nil-addends
-   =goal>
-     ISA             add-two-numbers
-     state           retrieving-addition-fact
-     place           =place
-     carry           =carry-value
-   ?imaginal>
-     state           free
-     buffer          full
-   =imaginal>
-     addend1         nil
-     addend2         nil
-==>
-   =goal>
-     ISA             add-two-numbers
-     state           set-place-value-answer
-     =place          =carry-value
-     carry           nil
-)
-
-;;; ============================================================================
-;;; Get highest positional value of answer, when one of place values of two 
-;;; addends is nil.
-;;; 
-;;; IF value of CARRY is 1
-;;; THEN set the current place value of answer as (1 + value of =non-nil-addend)
-;;; ============================================================================
-(p process-one-nil-addend
-   =goal>
-     ISA             add-two-numbers
-     state           retrieving-addition-fact
-     place           =place
-     - carry         nil
-     non-nil-addend  =addend-slot
-   ?imaginal>
-     state           free
-     buffer          full
-   =imaginal>
-     =addend-slot    =addend-value
-==>
-   =goal>
-     ISA             add-two-numbers
-     state           retrieving-addition-fact
-   *imaginal>
-     addend1         =addend-value
-     addend2         1
-)
 
 ;;; ============================================================================
 ;;; Use chunk in imagnial buffer to retrieval ADDIITON-FACT in declarative memory.
@@ -447,21 +390,21 @@
 ==>
    =goal>  
      ISA             add-two-numbers
-     state           process-carry
+     state           checking-carry
    *imaginal>   
      ISA             addition-fact
      sum             =sum         
 )
 
 ;;; ============================================================================
-;;; Compare the SUM of two place values with 10
-;;; IF the SUM is larger than 10
-;;; THEN there is a carry
+;;; IF the CARRY slot is not nil
+;;; THEN add carry to sum
 ;;; ============================================================================
-(p process-carry
+(p add-carry
    =goal>
      ISA             add-two-numbers
-     state           process-carry
+     state           checking-carry
+     - carry         nil
    ?retrieval>
      state           free
    ?imaginal>
@@ -471,16 +414,153 @@
 ==>
    =goal>  
      ISA             add-two-numbers
-     state           comparing-sum-and-ten
+     state           retrieving-addition-fact
+     carry           nil
+   +retrieval>
+     ISA             addition-fact
+     addend1         1
+     addend2         =sum             
+)
+
+;;; ============================================================================
+;;; Compare sum and 10, to determine remainder and carry
+;;; ============================================================================
+(p compare-sum-ten
+   =goal>
+     ISA             add-two-numbers
+     state           checking-carry
+     carry           nil
+   ?imaginal>
+     state           free
+   =imaginal>
+     sum             =sum
+   ?retrieval>
+     state           free
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           retrieving-addition-fact-4-carry
    +retrieval>
      ISA             addition-fact
      addend1         10
      sum             =sum             
 )
 
-;;(p no-carry)
+;;; ============================================================================
+;;; Compare sum and 10, to determine remainder and carry
+;;; ============================================================================
+(p process-carry-remainder
+   =goal>
+     ISA             add-two-numbers
+     state           retrieving-addition-fact-4-carry
+     answer          =answer
+   ?retrieval>
+     state           free
+     - buffer        failure
+   =retrieval>
+     addend2         =remainder
+   ?imaginal>
+     state           free
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           seting-answer-place-value
+     carry           T
+     remainder       =remainder
+   +imaginal>        =answer           
+)
 
+;;; ============================================================================
+;;; Put remainder into =place slot of answer chunk
+;;; ============================================================================
+(p set-answer-place-value
+   =goal>
+     ISA             add-two-numbers
+     state           seting-answer-place-value
+     place           =place
+     remainder       =remainder
+   ?imaginal>
+     state           free
+   =imaginal>
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           putting-answer-back
+   *imaginal>        
+     =place          =remainder
+)
 
+;;; ============================================================================
+;;; Put answer chunk back to goal buffer
+;;; ============================================================================
+(p put-answer-back
+   =goal>
+     ISA             add-two-numbers
+     state           putting-answer-back
+   ?imaginal>
+     state           free
+   =imaginal>
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           retrieving-next-place
+     answer          =imaginal
+     remainder       nil
+)
 
+;;; ============================================================================
+;;; Retrieve next palce from declarative memory
+;;; ============================================================================
+(p retrieve-next-place
+   =goal>
+     ISA             add-two-numbers
+     state           retrieving-next-place
+     place           =place
+   ?retrieval>
+     state           free
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           checking-next-place
+   +retrieval>
+     ISA             positional-order
+     first           =place
+)
+
+;;; ============================================================================
+;;; Retrieve next palce failed
+;;; ============================================================================
+(p process-retrieval-failure-next-place
+   =goal>
+     ISA             add-two-numbers
+     state           retrieving-next-place
+   ?retrieval>
+     state           free
+     buffer          failure
+==>
+   -goal>               
+   -retrieval>  
+   !output!          ("current highest palce is not sufficient.")  
+)
+
+;;; ============================================================================
+;;; Move to next palce and repeat processing
+;;; ============================================================================
+(p move-place
+   =goal>
+     ISA             add-two-numbers
+     state           retrieving-next-place
+   ?retrieval>
+     state           free
+     - buffer        failure
+   =retrieval>
+     second          =next-place
+==>
+   =goal>  
+     ISA             add-two-numbers
+     state           retrieve-addend1
+     place           =next-place
+)
+;;; retrieve-addend1
 ;;; end of productions
 )
