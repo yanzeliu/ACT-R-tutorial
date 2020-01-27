@@ -14,9 +14,11 @@
 ;; Add Chunks here
 (add-dm
 
- (hundreds) (tens) (ones)
+ (thousands) (hundreds) (tens) (ones)
  (addend1) (addend2)
- (start) (get-place-value-1) (get-place-value-2) (retrieving-addition-fact) (add-place-values)
+ (start) (get-place-value-1) (get-place-value-2) (retrieving-addition-fact) (add-place-values) (CREATING-ANSWER) (RETRIEVE-ADDEND1)
+ (RETRIEVE-ADDEND2) (PRINTING-ANSWER) (GET-PLACE-VALUES-SUM) (RETRIEVING-ADDITION-FACT-REVERSELY) (CHECKING-CARRY) (CHECKING-NEXT-PLACE)
+ (RETRIEVING-ADDITION-FACT-4-CARRY) (SETING-ANSWER-PLACE-VALUE) (PUTTING-ANSWER-BACK) (RETRIEVING-NEXT-PLACE)
 
  (af-0-0 ISA addition-fact addend1 0 addend2 0 sum 0)
  (af-0-1 ISA addition-fact addend1 0 addend2 1 sum 1)
@@ -38,6 +40,16 @@
  (af-1-7 ISA addition-fact addend1 1 addend2 7 sum 8)
  (af-1-8 ISA addition-fact addend1 1 addend2 8 sum 9)
  (af-1-9 ISA addition-fact addend1 1 addend2 9 sum 10)
+
+ (af-1-10 ISA addition-fact addend1 1 addend2 10 sum 11)
+ (af-1-11 ISA addition-fact addend1 1 addend2 11 sum 12)
+ (af-1-12 ISA addition-fact addend1 1 addend2 12 sum 13)
+ (af-1-13 ISA addition-fact addend1 1 addend2 13 sum 14)
+ (af-1-14 ISA addition-fact addend1 1 addend2 14 sum 15)
+ (af-1-15 ISA addition-fact addend1 1 addend2 15 sum 16)
+ (af-1-16 ISA addition-fact addend1 1 addend2 16 sum 17)
+ (af-1-17 ISA addition-fact addend1 1 addend2 17 sum 18)
+ (af-1-18 ISA addition-fact addend1 1 addend2 18 sum 19)
 
  (af-2-2 ISA addition-fact addend1 2 addend2 2 sum 4)
  (af-2-3 ISA addition-fact addend1 2 addend2 3 sum 5)
@@ -96,6 +108,7 @@
 
  (po-0 ISA positional-order first ones second tens)
  (po-1 ISA positional-order first tens second hundreds)
+ (po-3 ISA positional-order first hundreds second thousands)
 
  (addend18 ISA number tens 1 ones 8)
  (addend23 ISA number tens 2 ones 3)
@@ -103,10 +116,7 @@
  (goal ISA add-two-numbers first-addend addend18 second-addend addend23 state start place ones)
 )
 
-;;(define-chunks)
-
 (goal-focus goal)
-;;(goal ISA add-two-numbers first first-addend second second-addend)
 
 ;;; ============================================================================
 ;;; Set current place as ONES
@@ -172,6 +182,8 @@
      place           =place
    ?imaginal>
      state           free
+   ?retrieval>
+     state           free
    =retrieval>
      ISA             number
      =place          =place-value
@@ -195,6 +207,8 @@
      state           get-place-value-1
      place           =place
    ?imaginal>
+     state           free
+   ?retrieval>
      state           free
    =retrieval>
      ISA             number
@@ -227,7 +241,6 @@
 ;;; ============================================================================
 ;;; Put the value of current palce from second addend to the ADDEND2 slot of 
 ;;; imaginal buffer.
-;;; Use ADDEND1 and ADDEND2 to retrieval ADDIITON-FACT in declarative memory.
 ;;; ============================================================================
 (p get-place-value-of-addend2
    =goal>
@@ -246,60 +259,26 @@
 ==>
    =goal>
      ISA             add-two-numbers
-     state           checking-addends
+     state           retrieving-addition-fact
    *imaginal>   
      ISA             addition-fact
      addend2         =place-value-2
 )
 
-
 ;;; ============================================================================
-;;; Check two addends, IF all 0 & carry is nil THEN finished
+;;; IF the value of current palce from second addend is nil
+;;; THEN put 0 to the ADDEND2 slot of imaginal buffer
 ;;; ============================================================================
-(p check-addition-finished
+(p process-nil-place-value-addend2
    =goal>
      ISA             add-two-numbers
-     state           checking-addends
-     carry           nil
-   ?imaginal>
+     state           get-place-value-2
+     place           =place
+   ?retrieval>
      state           free
-   =imaginal>
-     addend1         0
-     addend2         0
-==>
-   =goal>
-     ISA             add-two-numbers
-     state           output-result
-)
-
-;;; ============================================================================
-;;; Check two addends, IF all 0 & carry is T THEN change addend2
-;;; ============================================================================
-(p process-highest-place-value
-   =goal>
-     ISA             add-two-numbers
-     state           checking-addends
-     carry           T
-   ?imaginal>
-     state           free
-   =imaginal>
-     addend1         0
-     addend2         0
-==>
-   =goal>
-     ISA             add-two-numbers
-     state           retrieving-addition-fact
-   =imaginal>
-     addend2         1  
-)
-
-;;; ============================================================================
-;;; Check two addends, IF two addends not zero THEN change goal state
-;;; ============================================================================
-(p check-addends1-pass
-   =goal>
-     ISA             add-two-numbers
-     state           checking-addends
+   =retrieval>
+     ISA             number
+     =place          nil
    ?imaginal>
      state           free
    =imaginal>
@@ -308,22 +287,72 @@
    =goal>
      ISA             add-two-numbers
      state           retrieving-addition-fact
-   =imaginal>
+   *imaginal>   
+     ISA             addition-fact
+     addend2         0
 )
 
-(p check-addends2-pass
+;;; ============================================================================
+;;; IF the values of current palce of two addends are both nil AND carry is nil
+;;; THEN addition finish, output result
+;;; ============================================================================
+(p process-stop-condition
    =goal>
      ISA             add-two-numbers
-     state           checking-addends
+     state           get-place-value-2
+     place           =place
+     carry           nil
+     answer          =answer
+   ?retrieval>
+     state           free
+   =retrieval>
+     ISA             number
+     =place          nil
    ?imaginal>
      state           free
    =imaginal>
-     - addend2       0
+     addend1         0
+==>
+   =goal>
+     ISA             add-two-numbers
+     state           printing-answer
+   
+)
+
+(p output-answer
+   =goal>
+     ISA             add-two-numbers
+     state           printing-answer
+     answer          =answer
+==>
+   -goal>
+   !output!          (=answer)
+)
+
+(p process-final-carry
+   =goal>
+     ISA             add-two-numbers
+     state           get-place-value-2
+     place           =place
+     carry           T
+   ?retrieval>
+     state           free
+   =retrieval>
+     ISA             number
+     =place          nil
+   ?imaginal>
+     state           free
+   =imaginal>
+     addend1         0
 ==>
    =goal>
      ISA             add-two-numbers
      state           retrieving-addition-fact
-   =imaginal>
+     carry           nil
+   *imaginal>   
+     ISA             addition-fact
+     addend1         0
+     addend2         1
 )
 
 ;;; ============================================================================
@@ -452,9 +481,7 @@
    =goal>
      ISA             add-two-numbers
      state           checking-carry
-     - carry         nil
-   ?retrieval>
-     state           free
+     carry           T
    ?imaginal>
      state           free
    =imaginal>
@@ -464,11 +491,11 @@
      ISA             add-two-numbers
      state           retrieving-addition-fact
      carry           nil
-   +retrieval>
+   *imaginal>
      ISA             addition-fact
      addend1         1
      addend2         =sum
-   =imaginal>
+     sum             nil
 )
 
 ;;; ============================================================================
@@ -639,6 +666,12 @@
      state           retrieve-addend1
      place           =next-place
 )
-;;; retrieve-addend1
 ;;; end of productions
+
+
 )
+
+
+;;(defun print-answer (answer)
+;;       (ones (chunk-slot-value answer ones))
+;;)
