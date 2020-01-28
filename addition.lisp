@@ -169,6 +169,7 @@
      state           get-place-value-1
    +retrieval>       =addend1
 )
+
 ;;; ============================================================================
 ;;; Get the value of current palce from first addend.
 ;;; Create a new addition-fact chunk in imaginal buffer.
@@ -237,6 +238,7 @@
      state           get-place-value-2
      +retrieval>     =addend2
 )
+
 ;;; ============================================================================
 ;;; Put the value of current palce from second addend to the ADDEND2 slot of 
 ;;; imaginal buffer.
@@ -312,7 +314,7 @@
    =imaginal>
      addend1         0
 ==>
-   !eval!            (pprint-chunks answer)
+   !eval!            (pprint-chunks-fct (list =answer))
    -goal>
 )
 
