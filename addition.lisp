@@ -8,7 +8,7 @@
 ;; Add Chunk-types here
 (chunk-type add-two-numbers first-addend second-addend answer highest-place state place carry place-value)
 (chunk-type addition-fact addend1 addend2 sum)
-(chunk-type number hundreds tens ones)
+(chunk-type number thousands hundreds tens ones)
 (chunk-type positional-order first second)
 
 ;; Add Chunks here
@@ -17,8 +17,8 @@
  (thousands) (hundreds) (tens) (ones)
  (addend1) (addend2)
  (start) (get-place-value-1) (get-place-value-2) (retrieving-addition-fact) (add-place-values) (CREATING-ANSWER) (RETRIEVE-ADDEND1)
- (RETRIEVE-ADDEND2) (PRINTING-ANSWER) (GET-PLACE-VALUES-SUM) (RETRIEVING-ADDITION-FACT-REVERSELY) (CHECKING-CARRY) (CHECKING-NEXT-PLACE)
- (RETRIEVING-ADDITION-FACT-4-CARRY) (SETING-ANSWER-PLACE-VALUE) (PUTTING-ANSWER-BACK) (RETRIEVING-NEXT-PLACE)
+ (RETRIEVE-ADDEND2) (GET-PLACE-VALUES-SUM) (RETRIEVING-ADDITION-FACT-REVERSELY) (CHECKING-CARRY) (CHECKING-NEXT-PLACE)
+ (RETRIEVING-ADDITION-FACT-4-CARRY) (SETING-ANSWER-PLACE-VALUE) (RETRIEVING-NEXT-PLACE)
 
  (af-0-0 ISA addition-fact addend1 0 addend2 0 sum 0)
  (af-0-1 ISA addition-fact addend1 0 addend2 1 sum 1)
@@ -108,51 +108,50 @@
 
  (po-0 ISA positional-order first ones second tens)
  (po-1 ISA positional-order first tens second hundreds)
- (po-3 ISA positional-order first hundreds second thousands)
+ (po-2 ISA positional-order first hundreds second thousands)
 
  (addend18 ISA number tens 1 ones 8)
  (addend23 ISA number tens 2 ones 3)
-
- (goal ISA add-two-numbers first-addend addend18 second-addend addend23 state start place ones)
+ 
 )
+
+(define-chunks 
+  (answer ISA number)
+  (goal ISA add-two-numbers first-addend addend18 second-addend addend23 answer answer state start place ones)
+ )
 
 (goal-focus goal)
 
 ;;; ============================================================================
 ;;; Set current place as ONES
-;;; Create a chunk in imaginal buffer to store answer of addition
 ;;; ============================================================================
 (p start
    =goal>
      ISA             add-two-numbers
      state           start
-   ?imaginal>
-     state           free
 ==>
    =goal>
      ISA             add-two-numbers
-     state           creating-answer
+     state           retrieve-addend1
      place           ones
-   +imaginal>
-     ISA             number
 )
 
 ;;; ============================================================================
 ;;; Put the chunk into ANSWER slot of goal chunk
 ;;; ============================================================================
-(p create-answer
-   =goal>
-     ISA             add-two-numbers
-     state           creating-answer
-   ?imaginal>
-     state           free
-   =imaginal>
-==>
-   =goal>
-     ISA             add-two-numbers
-     state           retrieve-addend1
-     answer          =imaginal
-)
+;;(p create-answer
+;;   =goal>
+;;     ISA             add-two-numbers
+;;     state           creating-answer
+;;   ?imaginal>
+;;     state           free
+;;   =imaginal>
+;;==>
+;;   =goal>
+;;     ISA             add-two-numbers
+;;     state           retrieve-addend1
+;;     answer          =imaginal
+;;)
 
 ;;; ============================================================================
 ;;; Retrieval first addend from declarative memorys
@@ -296,7 +295,7 @@
 ;;; IF the values of current palce of two addends are both nil AND carry is nil
 ;;; THEN addition finish, output result
 ;;; ============================================================================
-(p process-stop-condition
+(p stop-processing
    =goal>
      ISA             add-two-numbers
      state           get-place-value-2
@@ -313,20 +312,8 @@
    =imaginal>
      addend1         0
 ==>
-   =goal>
-     ISA             add-two-numbers
-     state           printing-answer
-   
-)
-
-(p output-answer
-   =goal>
-     ISA             add-two-numbers
-     state           printing-answer
-     answer          =answer
-==>
+   !eval!            (pprint-chunks answer)
    -goal>
-   !output!          (=answer)
 )
 
 (p process-final-carry
@@ -531,7 +518,6 @@
    =goal>
      ISA             add-two-numbers
      state           retrieving-addition-fact-4-carry
-     answer          =answer
    ?retrieval>
      state           free
      - buffer        failure
@@ -544,8 +530,7 @@
      ISA             add-two-numbers
      state           seting-answer-place-value
      carry           T
-     place-value     =remainder
-   +imaginal>        =answer           
+     place-value     =remainder         
 )
 
 
@@ -557,7 +542,6 @@
    =goal>
      ISA             add-two-numbers
      state           retrieving-addition-fact-4-carry
-     answer          =answer
    ?retrieval>
      state           free
      buffer          failure
@@ -570,8 +554,7 @@
      ISA             add-two-numbers
      state           seting-answer-place-value
      carry           nil
-     place-value     =sum
-   +imaginal>        =answer           
+     place-value     =sum     
    -retrieval>
    )
 
@@ -584,34 +567,32 @@
      state           seting-answer-place-value
      place           =place
      place-value     =place-value
-   ?imaginal>
-     state           free
-   =imaginal>
+     answer          =answer
 ==>
+   !eval!            (set-chunk-slot-value-fct =answer =place =place-value)   
    =goal>  
      ISA             add-two-numbers
-     state           putting-answer-back
-   *imaginal>        
-     =place          =place-value
+     state           retrieving-next-place
+     place-value     nil
 )
 
 ;;; ============================================================================
 ;;; Put answer chunk back to goal buffer
 ;;; ============================================================================
-(p put-answer-back
-   =goal>
-     ISA             add-two-numbers
-     state           putting-answer-back
-   ?imaginal>
-     state           free
-   =imaginal>
-==>
-   =goal>  
-     ISA             add-two-numbers
-     state           retrieving-next-place
-     answer          =imaginal
-     place-value     nil
-)
+;;(p put-answer-back
+;;   =goal>
+;;     ISA             add-two-numbers
+;;     state           putting-answer-back
+;;   ?imaginal>
+;;     state           free
+;;   =imaginal>
+;;==>
+;;   =goal>  
+;;     ISA             add-two-numbers
+;;     state           retrieving-next-place
+;;     answer          =imaginal
+;;     place-value     nil
+;;)
 
 ;;; ============================================================================
 ;;; Retrieve next palce from declarative memory
@@ -670,8 +651,3 @@
 
 
 )
-
-
-;;(defun print-answer (answer)
-;;       (ones (chunk-slot-value answer ones))
-;;)
